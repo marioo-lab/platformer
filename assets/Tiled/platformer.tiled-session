@@ -15,12 +15,30 @@
         "#decorations": {
             "dynamicWrapping": false
         },
+        "D:/Work/hammer-game/tiled/maps/Level 1.tmx": {
+            "scale": 0.963916015625,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 513.0114989108961,
+                "y": 288.4068689529406
+            }
+        },
+        "D:/Work/hammer-game/tiled/tilesets/Decorations.tsx": {
+            "scaleInDock": 1
+        },
+        "D:/Work/hammer-game/tiled/tilesets/Main.tsx": {
+            "scaleInDock": 1
+        },
+        "D:/Work/hammer-game/tiled/tilesets/Misc.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
         "level1.tmx": {
             "scale": 0.75,
-            "selectedLayer": 0,
+            "selectedLayer": 2,
             "viewCenter": {
                 "x": 590,
-                "y": 168
+                "y": 166.66666666666663
             }
         },
         "level1.tmx#decorations": {
@@ -34,7 +52,8 @@
         },
         "level1.tmx#terrain": {
             "dynamicWrapping": false,
-            "scaleInDock": 1
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         }
     },
     "last.exportedFilePath": "D:/Work/platformer/assets/Tiled",
@@ -48,7 +67,8 @@
     ],
     "project": "platformer.tiled-project",
     "recentFiles": [
-        "level1.tmx"
+        "level1.tmx",
+        "D:/Work/hammer-game/tiled/maps/Level 1.tmx"
     ],
     "tileset.embedInMap": true,
     "tileset.type": 1,
