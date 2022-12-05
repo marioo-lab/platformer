@@ -1,0 +1,55 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "": {
+            "scaleInDock": 1
+        },
+        "#decorations": {
+            "dynamicWrapping": false
+        },
+        "level1.tmx": {
+            "scale": 1,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 520.5,
+                "y": 313
+            }
+        },
+        "level1.tmx#decorations": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "level1.tmx#objects": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "level1.tmx#terrain": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        }
+    },
+    "last.exportedFilePath": "D:/Work/platformer/assets/Tiled",
+    "last.imagePath": "D:/Work/platformer/assets/14-TileSets",
+    "map.height": 20,
+    "map.lastUsedExportFilter": "JavaScript map files (*.js)",
+    "map.lastUsedFormat": "tmx",
+    "map.width": 32,
+    "openFiles": [
+    ],
+    "project": "platformer.tiled-project",
+    "recentFiles": [
+        "level1.tmx"
+    ],
+    "tileset.embedInMap": true,
+    "tileset.type": 1,
+    "tileset.useTransparentColor": true
+}

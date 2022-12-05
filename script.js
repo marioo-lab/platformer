@@ -57,8 +57,8 @@ class Block {
   constructor(x, y) {
     this.x = x
     this.y = y
-    this.width = 64
-    this.height = 64
+    this.width = 32
+    this.height = 32
   }
   draw(context) {
     context.fillStyle = 'rgba(255, 0, 0, 0.5)'
@@ -293,8 +293,8 @@ class Player extends Sprite {
       return
     }
 
-    if(this.speedY === 0 && Math.abs(this.speedX) < 1)  this.idle()
-    else if(this.speedY > 0)                            this.fall()
+    if(this.isStanding && this.speedY === 0 && Math.abs(this.speedX) < 1)  this.idle()
+    else if(this.speedY > 0)                                               this.fall()
   }
   handleSpeed(factor = 0.2) { this.speedX = this.game.lerp(this.speedX, 0, factor) }
   handleMovement() {
@@ -342,32 +342,26 @@ class Player extends Sprite {
   turn(dir) {
     if(dir != this.direction) {
       this.direction = dir 
+      const hx = this.x + this.hitbox.ox
       this.hitbox.ox = this.width - (this.hitbox.ox + this.hitbox.width)
+      this.x = hx - this.hitbox.ox
     }
   }
   run() {
-    if(this.state === this.States.hit) return
-
     this.speedX = this.direction*this.maxspeed
     this.state = this.States.run      
     this.animate(this.state)
   }
   jump() {
-    if(this.state === this.States.hit) return
-
     if(this.state != this.States.jump) this.speedY = -10      
     this.state = this.States.jump      
     this.animate(this.state)
   }
   fall() {
-    if(this.state === this.States.hit) return
-
     this.state = this.States.fall
     this.animate(this.state)
   }
   attack() {
-    if(this.state === this.States.hit) return
-
     this.speedX = this.direction*this.maxspeed
     this.state = this.States.attack
     this.animate(this.state)
@@ -455,7 +449,10 @@ class Level {
   }
   draw(context) {
     this.layers.forEach(layer => layer.draw(context))
-    this.map.forEach(block => block.draw(context))
+
+    if(this.game.debug) {
+      this.map.forEach(block => block.draw(context))
+    }
   }
 }
 class UI {
@@ -597,8 +594,8 @@ window.addEventListener('load', function() {
   // ctx.imageSmoothingQuality = "low"
   // ctx.translate(0.5, 0.5);
 
-  canvas.width = 800
-  canvas.height = 720
+  canvas.width = 1024
+  canvas.height = 640
 
   const game = new Game(canvas.width, canvas.height)
   let lastTime = 0
