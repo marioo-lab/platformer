@@ -51,5 +51,15 @@ class InputHandler {
           break;
       }
     })
+
+    window.addEventListener('touchstart', e => {
+      console.log('touch start')
+    })
+    window.addEventListener('touchmove', e => {
+      console.log('touch move')
+    })
+    window.addEventListener('touchend', e => {
+      console.log('touch end')
+    })
   }
 }

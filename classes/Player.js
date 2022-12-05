@@ -23,7 +23,8 @@ class Player extends Sprite {
     this.speedX = 0
     this.speedY = 0
     this.weight = 0.5
-    this.maxspeed = 4
+    this.runSpeed = 4
+    this.jumpForce = 10
     this.life = 10
     this.lifeTimer = 0
     this.lifeInterval = 100
@@ -231,12 +232,12 @@ class Player extends Sprite {
     }
   }
   run() {
-    this.speedX = this.direction*this.maxspeed
+    this.speedX = this.direction*this.runSpeed
     this.state = this.States.run      
     this.animate(this.state)
   }
   jump() {
-    if(this.isStanding) this.speedY = -10      
+    if(this.isStanding) this.speedY = -this.jumpForce      
     this.state = this.States.jump      
     this.animate(this.state)
   }
@@ -245,12 +246,12 @@ class Player extends Sprite {
     this.animate(this.state)
   }
   attack() {
-    this.speedX = this.direction*this.maxspeed
+    this.speedX = this.direction*this.runSpeed
     this.state = this.States.attack
     this.animate(this.state)
   }
   hit(points) {
-    this.speedX = -this.direction*this.maxspeed
+    this.speedX = -this.direction*this.runSpeed
     this.life -= points
     if(this.life < 0) this.life = 0  
     this.state = this.States.hit     
