@@ -2,9 +2,6 @@ window.addEventListener('load', function() {
   //canvas setup
   const canvas = document.getElementById('canvas1')
   const ctx = canvas.getContext('2d')
-  // ctx.imageSmoothingEnabled = false
-  // ctx.imageSmoothingQuality = "low"
-  // ctx.translate(0.5, 0.5);
 
   canvas.width = 1024
   canvas.height = 640
