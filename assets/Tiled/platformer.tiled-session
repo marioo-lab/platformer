@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "",
+    "activeFile": "level1.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -16,11 +16,11 @@
             "dynamicWrapping": false
         },
         "level1.tmx": {
-            "scale": 1,
+            "scale": 0.75,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 520.5,
-                "y": 313
+                "x": 590,
+                "y": 168
             }
         },
         "level1.tmx#decorations": {
@@ -44,6 +44,7 @@
     "map.lastUsedFormat": "tmx",
     "map.width": 32,
     "openFiles": [
+        "level1.tmx"
     ],
     "project": "platformer.tiled-project",
     "recentFiles": [

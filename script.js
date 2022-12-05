@@ -133,7 +133,7 @@ class Player extends Sprite {
     }
 
     this.game = game
-    this.x = 200
+    this.x = 150
     this.y = 200
     this.width = 156
     this.height = 116
@@ -353,7 +353,7 @@ class Player extends Sprite {
     this.animate(this.state)
   }
   jump() {
-    if(this.state != this.States.jump) this.speedY = -10      
+    if(this.isStanding) this.speedY = -10      
     this.state = this.States.jump      
     this.animate(this.state)
   }
