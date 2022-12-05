@@ -4,9 +4,15 @@ class InputHandler {
     window.addEventListener('keydown', e => {
       switch(e.key) {
         case ' ':
-          if(!this.game.keys.space.pressed) {
-            this.game.keys.space.pressed = true
-            this.game.keys.space.handled = false
+          if(!this.game.keys.attack.pressed) {
+            this.game.keys.attack.pressed = true
+            this.game.keys.attack.handled = false
+          }
+          break;
+        case 'ArrowUp':
+          if(!this.game.keys.jump.pressed) {
+            this.game.keys.jump.pressed = true
+            this.game.keys.jump.handled = false
           }
           break;
         case 'ArrowLeft':
@@ -14,6 +20,12 @@ class InputHandler {
           break;
         case 'ArrowRight':
           this.game.keys.right.pressed = true
+          break;
+        case 'ArrowDown':
+          if(!this.game.keys.hit.pressed) {
+            this.game.keys.hit.pressed = true
+            this.game.keys.hit.handled = false
+          }
           break;
         case 'd':
           this.game.debug = !this.game.debug
@@ -23,13 +35,19 @@ class InputHandler {
     window.addEventListener('keyup', e => {
       switch(e.key) {
         case ' ':
-          this.game.keys.space.pressed = false
+          this.game.keys.attack.pressed = false
+          break;
+        case 'ArrowUp':
+          this.game.keys.jump.pressed = false
           break;
         case 'ArrowLeft':
           this.game.keys.left.pressed = false
           break;
         case 'ArrowRight':
           this.game.keys.right.pressed = false
+          break;
+        case 'ArrowDown':
+          this.game.keys.hit.pressed = false
           break;
       }
     })
@@ -54,7 +72,9 @@ class Sprite {
     this.width = 0
     this.height = 0
     this.image = null
+    this.animations = []
     this.frame = 0
+    this.loop = false
     this.direction = 1
     this.frameCount = 0
     this.fps = 10
@@ -64,8 +84,8 @@ class Sprite {
   update(deltaTime) {
     //sprite animation
     if(this.frameTimer >= this.frameInterval) {
-      if(this.frame < this.frameCount - 1) this.frame++
-      else                                  this.frame = 0  
+      if(this.frame < this.frameCount - 1)  this.frame++
+      else if(this.loop)                    this.frame = 0  
       
       this.frameTimer = 0
     }else {
@@ -83,16 +103,33 @@ class Sprite {
     if(this.game.debug) context.strokeRect(this.direction*this.x, this.y, this.direction*this.width, this.height)
     context.restore()
   }
+  animate(animation) {
+    //don't interrupt a non loop animation
+    if(!this.loop && this.frame < this.frameCount - 1) return
+
+    if(this.image != this.animations[animation].image) {
+      this.image = this.animations[animation].image
+      this.frameCount = this.animations[animation].frameCount
+      this.loop = this.animations[animation].loop
+      this.frame = 0    
+    }
+  }
 }
 class Player extends Sprite {
   constructor(game) {
     super()
 
     this.States = {
+      none: 0,      
       idle: 1,
       run:  2,
       jump: 3,
-      fall: 4
+      fall: 4,
+      attack: 5,
+      hit: 6,
+      dead: 7,
+      doorIn: 8,
+      doorOut: 9
     }
 
     this.game = game
@@ -106,7 +143,9 @@ class Player extends Sprite {
     this.maxspeed = 4
     this.life = 10
     this.lifeTimer = 0
-    this.lifeInterval = 1000
+    this.lifeInterval = 100
+    this.attackTimer = 500
+    this.attackInterval = 500
     this.isStanding = false
     this.hitbox = {
       ox: 40,
@@ -114,27 +153,52 @@ class Player extends Sprite {
       width: 50,
       height: 50
     }
-    this.animations = {
-      idle: {
+    this.animations = [
+      {},
+      //idle: 
+      {
         image: document.getElementById('player-idle'),
-        frameCount: 11
+        frameCount: 11,
+        loop: true
       },
-      run: {
+      //run: 
+      {
         image: document.getElementById('player-run'),
-        frameCount: 8
+        frameCount: 8,
+        loop: true
       },
-      jump: {
+      //jump: 
+      {
         image: document.getElementById('player-jump'),
-        frameCount: 1
+        frameCount: 1,
+        loop: true
       },
-      fall: {
+      //fall: 
+      {
         image: document.getElementById('player-fall'),
-        frameCount: 1
+        frameCount: 1,
+        loop: true
+      },
+      //attack: 
+      {
+        image: document.getElementById('player-attack'),
+        frameCount: 3,
+        loop: false
+      },
+      //hit: 
+      {
+        image: document.getElementById('player-hit'),
+        frameCount: 2,
+        loop: false
+      },
+      //dead: 
+      {
+        image: document.getElementById('player-dead'),
+        frameCount: 4,
+        loop: false
       }
-    }
-    this.state = this.States.idle
-    this.image = this.animations.idle.image
-    this.frameCount = this.animations.idle.frameCount
+    ]
+    this.idle()
   }
   handleHorizontalCollisions() {
     for(let i = 0; i < this.game.level.map.length; i++){
@@ -190,34 +254,71 @@ class Player extends Sprite {
         }
     }
   }
-  handleSpeed(factor = 0.2) { this.speedX = this.game.lerp(this.speedX, 0, factor) }
-  update(deltaTime) { 
-    super.update(deltaTime)
+  handleInput(deltaTime) {
 
-    if(this.game.keys.right.pressed)        this.runRight()
-    else if(this.game.keys.left.pressed)    this.runLeft()
-    else if(this.speedY === 0)              this.idle()
-    
-    if(this.game.keys.space.pressed && 
-      !this.game.keys.space.handled &&  
-      this.isStanding) {
-      this.game.keys.space.handled = true
-                                            this.jump()    
+    if(this.life <= 0){
+      this.die()
+      return
     }
-    else if(this.speedY > 0)                this.fall()
 
-    
+    //handle hit
+    if(this.game.keys.hit.pressed && !this.game.keys.hit.handled) {
+      this.game.keys.hit.handled = true
+      this.hit(10)
+      return
+    }
+
+    //handle attack
+    if(this.attackTimer >= this.attackInterval) {
+      if(this.game.keys.attack.pressed && !this.game.keys.attack.handled) {
+        this.game.keys.attack.handled = true
+        this.attack()
+        this.attackTimer = 0
+        return
+      }  
+    }else this.attackTimer += deltaTime
+
+    //handle jump
+    if(this.game.keys.jump.pressed && !this.game.keys.jump.handled && this.isStanding) {
+      this.game.keys.jump.handled = true
+      this.jump()
+      return
+    }
+
+    //handle movement
+    if(this.game.keys.right.pressed || this.game.keys.left.pressed) {
+      const dir = this.game.keys.right.pressed < this.game.keys.left.pressed ? -1 : 1
+      this.turn(dir)
+      this.run()
+      return
+    }
+
+    if(this.speedY === 0 && Math.abs(this.speedX) < 1)  this.idle()
+    else if(this.speedY > 0)                            this.fall()
+  }
+  handleSpeed(factor = 0.2) { this.speedX = this.game.lerp(this.speedX, 0, factor) }
+  handleMovement() {
     //horizontal movement
     this.handleSpeed()
     this.x += this.speedX
-    this.handleHorizontalCollisions()
-
+    this.handleHorizontalCollisions()    
+  }
+  handleJump() {
     //vertical movement
     this.speedY += this.weight
     this.y += this.speedY
     this.handleVerticalCollisions()
+  }
+  handleAttack() {}
+  update(deltaTime) { 
+    super.update(deltaTime)
 
-    if(this.lifeTimer > this.lifeInterval){
+    this.handleInput(deltaTime)
+    this.handleMovement()
+    this.handleJump()
+    this.handleAttack()
+
+    if(this.life > 0 && this.lifeTimer > this.lifeInterval){
       if(this.life < 100) this.life++
       this.lifeTimer = 0
     } else {
@@ -227,64 +328,60 @@ class Player extends Sprite {
   draw(context) {
     super.draw(context)
     
-    if(this.game.debug) context.strokeRect(this.x + this.hitbox.ox, this.y + this.hitbox.oy, this.hitbox.width, this.hitbox.height)
+    if(this.game.debug) {
+      context.strokeRect(this.x + this.hitbox.ox, this.y + this.hitbox.oy, this.hitbox.width, this.hitbox.height)
+      context.fillStyle = 'black'
+      context.font = '20px Helvetica'
+      context.fillText(this.state, this.x, this.y)    
+    }
   }
   idle() {
-    if(this.state != this.States.idle) {
-      this.state = this.States.idle
-      // this.speedX = 0
-      this.image = this.animations.idle.image
-      this.frameCount = this.animations.idle.frameCount
-      this.frame = 0  
+    this.state = this.States.idle
+    this.animate(this.state)
+  }
+  turn(dir) {
+    if(dir != this.direction) {
+      this.direction = dir 
+      this.hitbox.ox = this.width - (this.hitbox.ox + this.hitbox.width)
     }
   }
-  runRight() {
-    if(this.direction < 0) this.hitbox.ox = this.width - (this.hitbox.ox + this.hitbox.width)
+  run() {
+    if(this.state === this.States.hit) return
 
-    this.direction = 1
     this.speedX = this.direction*this.maxspeed
-
-    if(this.state != this.States.run) {
-      this.state = this.States.run
-      this.image = this.animations.run.image
-      this.frameCount = this.animations.run.frameCount
-      this.frame = 0  
-    }
-  }
-  runLeft() {
-    if(this.direction > 0) this.hitbox.ox = this.width - (this.hitbox.ox + this.hitbox.width)
-
-    this.direction = -1
-    this.speedX = this.direction*this.maxspeed
-
-    if(this.state != this.States.run) {
-      this.state = this.States.run
-      this.image = this.animations.run.image
-      this.frameCount = this.animations.run.frameCount
-      this.frame = 0  
-    }
+    this.state = this.States.run      
+    this.animate(this.state)
   }
   jump() {
-    if(this.state != this.States.jump) {
-      this.speedY = -10
-      this.state = this.States.jump
-      this.image = this.animations.jump.image
-      this.frameCount = this.animations.jump.frameCount
-      this.frame = 0  
-    }
+    if(this.state === this.States.hit) return
+
+    if(this.state != this.States.jump) this.speedY = -10      
+    this.state = this.States.jump      
+    this.animate(this.state)
   }
   fall() {
-    if(this.state != this.States.fall) {
-      this.state = this.States.fall
-      this.image = this.animations.fall.image
-      this.frameCount = this.animations.fall.frameCount
-      this.frame = 0  
-    }
+    if(this.state === this.States.hit) return
+
+    this.state = this.States.fall
+    this.animate(this.state)
+  }
+  attack() {
+    if(this.state === this.States.hit) return
+
+    this.speedX = this.direction*this.maxspeed
+    this.state = this.States.attack
+    this.animate(this.state)
   }
   hit(points) {
-    if(this.game.gameOver) return
+    this.speedX = -this.direction*this.maxspeed
     this.life -= points
-    if(this.life < 0) this.life = 0
+    if(this.life < 0) this.life = 0  
+    this.state = this.States.hit     
+    this.animate(this.state) 
+  }
+  die() {
+    this.state = this.States.dead
+    this.animate(this.state)
   }
 }
 class Enemy extends Sprite {
@@ -421,7 +518,7 @@ class Game {
     this.speed = 0
     this.debug = false
     this.keys = {
-      space: {
+      jump: {
         pressed: false,
         handled: false
       },
@@ -433,6 +530,14 @@ class Game {
         pressed: false,
         handled: false
       },
+      attack: {
+        pressed: false,
+        handled: false
+      },
+      hit: {
+        pressed: false,
+        handled: false
+      }
     }    
     this.level = new Level(this)
     this.player = new Player(this)

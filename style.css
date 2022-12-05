@@ -17,6 +17,6 @@
 }
 
 #level1, 
-#player-idle, #player-run, #player-jump, #player-fall{
+#player-idle, #player-run, #player-jump, #player-fall, #player-attack, #player-hit, #player-dead{
   display: none;
 }
