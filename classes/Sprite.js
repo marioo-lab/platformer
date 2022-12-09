@@ -8,6 +8,7 @@ class Sprite {
     this.animations = []
     this.frame = 0
     this.loop = false
+    this.flip = -1
     this.direction = 1
     this.frameCount = 0
     this.fps = 10
@@ -27,13 +28,13 @@ class Sprite {
   }
   draw(context) {
     context.save()
-    context.scale(this.direction, 1)
+    context.scale(this.flip*this.direction, 1)
     if(this.image) {
       context.drawImage(this.image, 
         this.frame * this.width, 0, this.width, this.height,
-        this.direction*this.x, this.y, this.direction*this.width, this.height)  
+        this.flip*this.direction*this.x, this.y, this.flip*this.direction*this.width, this.height)  
     }
-    if(this.game.debug) context.strokeRect(this.direction*this.x, this.y, this.direction*this.width, this.height)
+    if(this.game.debug) context.strokeRect(this.flip*this.direction*this.x, this.y, this.flip*this.direction*this.width, this.height)
     context.restore()
   }
   animate(animation) {

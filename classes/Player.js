@@ -37,6 +37,7 @@ class Player extends Sprite {
       width: 50,
       height: 50
     }
+    this.flip = 1
     this.animations = [
       {},
       //idle: 

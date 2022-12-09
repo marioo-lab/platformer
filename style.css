@@ -17,6 +17,7 @@
 }
 
 #level1, 
-#player-idle, #player-run, #player-jump, #player-fall, #player-attack, #player-hit, #player-dead{
+#player-idle, #player-run, #player-jump, #player-fall, #player-attack, #player-hit, #player-dead,
+#pig-idle, #pig-run, #pig-jump, #pig-fall, #pig-attack, #pig-hit, #pig-dead{
   display: none;
 }

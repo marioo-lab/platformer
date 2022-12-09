@@ -33,6 +33,7 @@ class Game {
     }    
     this.level = new Level(this)
     this.player = new Player(this)
+    this.enemies.push(new Pig(this))
     this.input = new InputHandler(this)
     this.ui = new UI(this)
   }
@@ -44,15 +45,15 @@ class Game {
 
     this.enemies.forEach(enemy => {
       enemy.update(deltaTime)
-      if(this.checkCollision(this.player, enemy)) {
-        this.player.hit(enemy.damage)
+      // if(this.checkCollision(this.player, enemy)) {
+      //   this.player.hit(enemy.damage)
 
-        enemy.marked = true
+      //   enemy.marked = true
 
-        if(this.player.life === 0) this.gameOver = true
-      }
+      //   if(this.player.life === 0) this.gameOver = true
+      // }
     })
-    this.enemies = this.enemies.filter(enemy => !enemy.marked)
+    // this.enemies = this.enemies.filter(enemy => !enemy.marked)
     
     // if(this.enemyTimer > this.enemyInterval && !this.gameOver) {
     //   this.addEnemy()
