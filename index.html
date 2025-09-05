@@ -1,47 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Platformer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bangers&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <canvas id="canvas1"></canvas>
-  <!-- player -->
-  <img id="player-idle" src="assets/01-King Human/Idle (156x116).png">
-  <img id="player-run" src="assets/01-King Human/Run (156x116).png">
-  <img id="player-jump" src="assets/01-King Human/Jump (156x116).png">
-  <img id="player-fall" src="assets/01-King Human/Fall (156x116).png">
-  <img id="player-attack" src="assets/01-King Human/Attack (156x116).png">
-  <img id="player-hit" src="assets/01-King Human/Hit (156x116).png">
-  <img id="player-dead" src="assets/01-King Human/Dead (156x116).png">
-  <!-- pig -->
-  <img id="pig-idle" src="assets/03-Pig/Idle (68x56).png">
-  <img id="pig-run" src="assets/03-Pig/Run (68x56).png">
-  <img id="pig-jump" src="assets/03-Pig/Jump (68x56).png">
-  <img id="pig-fall" src="assets/03-Pig/Fall (68x56).png">
-  <img id="pig-attack" src="assets/03-Pig/Attack (68x56).png">
-  <img id="pig-hit" src="assets/03-Pig/Hit (68x56).png">
-  <img id="pig-dead" src="assets/03-Pig/Dead (68x56).png">
-  <!-- props -->
-  <!-- environment -->
-  <img id="level1" src="assets/level1.png">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platformer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bangers&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <canvas id="canvas1"></canvas>
+    <!-- player -->
+    <img id="player-idle" src="assets/01-King Human/Idle (156x116).png" />
+    <img id="player-run" src="assets/01-King Human/Run (156x116).png" />
+    <img id="player-jump" src="assets/01-King Human/Jump (156x116).png" />
+    <img id="player-fall" src="assets/01-King Human/Fall (156x116).png" />
+    <img id="player-attack" src="assets/01-King Human/Attack (156x116).png" />
+    <img id="player-hit" src="assets/01-King Human/Hit (156x116).png" />
+    <img id="player-dead" src="assets/01-King Human/Dead (156x116).png" />
+    <!-- pig -->
+    <img id="pig-idle" src="assets/03-Pig/Idle (68x56).png" />
+    <img id="pig-run" src="assets/03-Pig/Run (68x56).png" />
+    <img id="pig-jump" src="assets/03-Pig/Jump (68x56).png" />
+    <img id="pig-fall" src="assets/03-Pig/Fall (68x56).png" />
+    <img id="pig-attack" src="assets/03-Pig/Attack (68x56).png" />
+    <img id="pig-hit" src="assets/03-Pig/Hit (68x56).png" />
+    <img id="pig-dead" src="assets/03-Pig/Dead (68x56).png" />
+    <!-- props -->
+    <!-- environment -->
+    <img id="level1" src="assets/level1.png" />
 
-  <script src="levels/maps.js"></script>
-  <script src="classes/Input.js"></script>
-  <script src="classes/Block.js"></script>
-  <script src="classes/Sprite.js"></script>
-  <script src="classes/Enemy.js"></script>
-  <script src="classes/PigAI.js"></script>
-  <script src="classes/Pig.js"></script>
-  <script src="classes/Player.js"></script>
-  <script src="classes/Level.js"></script>
-  <script src="classes/Layer.js"></script>
-  <script src="classes/UI.js"></script>
-  <script src="classes/Game.js"></script>
-  <script src="index.js"></script>
-</body>
+    <script src="levels/maps.js"></script>
+    <script src="classes/Input.js"></script>
+    <script src="classes/Block.js"></script>
+    <script src="classes/Sprite.js"></script>
+    <script src="classes/Enemy.js"></script>
+    <script src="classes/BaseAI.js"></script>
+    <script src="classes/PigAI.js"></script>
+    <script src="classes/Pig.js"></script>
+    <script src="classes/Player.js"></script>
+    <script src="classes/Level.js"></script>
+    <script src="classes/Layer.js"></script>
+    <script src="classes/UI.js"></script>
+    <script src="classes/Game.js"></script>
+    <script src="index.js"></script>
+  </body>
 </html>
