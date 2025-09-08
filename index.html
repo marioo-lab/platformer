@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Platformer</title>
+    <title>Enhanced Platformer Adventure</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,10 +12,132 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
+    <style>
+      /* Additional styles for mobile controls */
+      .mobile-controls {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        pointer-events: none;
+      }
+
+      .mobile-controls button {
+        pointer-events: all;
+        background: rgba(255, 255, 255, 0.3);
+        border: 2px solid white;
+        color: white;
+        font-family: "Bangers", cursive;
+        font-size: 14px;
+        border-radius: 8px;
+        padding: 10px;
+        margin: 5px;
+        touch-action: manipulation;
+        user-select: none;
+      }
+
+      .mobile-controls button:active {
+        background: rgba(255, 255, 255, 0.6);
+      }
+
+      /* Hide mobile controls on desktop */
+      @media (min-width: 768px) {
+        .mobile-controls {
+          display: none;
+        }
+      }
+
+      /* Loading screen */
+      .loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, #4d79bc, #2c5aa0);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        font-family: "Bangers", cursive;
+        color: white;
+        text-align: center;
+      }
+
+      .loading-spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 4px solid white;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .controls-info {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: "Bangers", cursive;
+        font-size: 14px;
+        z-index: 100;
+        max-width: 200px;
+      }
+
+      @media (max-width: 768px) {
+        .controls-info {
+          display: none;
+        }
+      }
+    </style>
   </head>
   <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+      <h1 style="font-size: 48px; margin-bottom: 20px">PLATFORMER ADVENTURE</h1>
+      <div class="loading-spinner"></div>
+      <p>Loading awesome game features...</p>
+      <p style="font-size: 14px; margin-top: 20px">
+        Enhanced with Camera System, Particle Effects, Audio, AI & More!
+      </p>
+    </div>
+
+    <!-- Controls Info -->
+    <div class="controls-info">
+      <h3>CONTROLS</h3>
+      <p>Arrow Keys / WASD - Move</p>
+      <p>Space - Attack</p>
+      <p>P / ESC - Pause</p>
+      <p>M - Toggle Audio</p>
+      <p>G - Debug Mode</p>
+      <p>F11 - Fullscreen</p>
+    </div>
+
+    <!-- Game Canvas -->
     <canvas id="canvas1"></canvas>
-    <!-- player -->
+
+    <!-- Mobile Touch Controls -->
+    <div class="mobile-controls" id="mobile-controls" style="display: none">
+      <!-- Controls will be drawn by the input handler -->
+    </div>
+
+    <!-- Asset Images -->
+    <!-- Player sprites -->
     <img id="player-idle" src="assets/01-King Human/Idle (156x116).png" />
     <img id="player-run" src="assets/01-King Human/Run (156x116).png" />
     <img id="player-jump" src="assets/01-King Human/Jump (156x116).png" />
@@ -23,7 +145,8 @@
     <img id="player-attack" src="assets/01-King Human/Attack (156x116).png" />
     <img id="player-hit" src="assets/01-King Human/Hit (156x116).png" />
     <img id="player-dead" src="assets/01-King Human/Dead (156x116).png" />
-    <!-- pig -->
+
+    <!-- Pig sprites -->
     <img id="pig-idle" src="assets/03-Pig/Idle (68x56).png" />
     <img id="pig-run" src="assets/03-Pig/Run (68x56).png" />
     <img id="pig-jump" src="assets/03-Pig/Jump (68x56).png" />
@@ -31,23 +154,42 @@
     <img id="pig-attack" src="assets/03-Pig/Attack (68x56).png" />
     <img id="pig-hit" src="assets/03-Pig/Hit (68x56).png" />
     <img id="pig-dead" src="assets/03-Pig/Dead (68x56).png" />
-    <!-- props -->
-    <!-- environment -->
+
+    <!-- Environment -->
     <img id="level1" src="assets/level1.png" />
 
+    <!-- Scripts - Load in correct order -->
+
+    <!-- Maps and basic data -->
     <script src="levels/maps.js"></script>
-    <script src="classes/Input.js"></script>
+
+    <!-- Core classes (no dependencies) -->
     <script src="classes/Block.js"></script>
     <script src="classes/Sprite.js"></script>
-    <script src="classes/Enemy.js"></script>
+
+    <!-- New Systems -->
+    <script src="classes/Camera.js"></script>
+    <script src="classes/Particles.js"></script>
+    <script src="classes/Audio.js"></script>
+
+    <!-- AI System -->
     <script src="classes/BaseAI.js"></script>
     <script src="classes/PigAI.js"></script>
+
+    <!-- Game entities -->
+    <script src="classes/Enemy.js"></script>
     <script src="classes/Pig.js"></script>
     <script src="classes/Player.js"></script>
+
+    <!-- Game systems -->
     <script src="classes/Level.js"></script>
     <script src="classes/Layer.js"></script>
     <script src="classes/UI.js"></script>
+    <script src="classes/Input.js"></script>
+
+    <!-- Main game class -->
     <script src="classes/Game.js"></script>
+
     <script src="index.js"></script>
   </body>
 </html>

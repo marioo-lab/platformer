@@ -24,8 +24,39 @@ class BaseAI {
     this.attackRange = 60;
     this.losePlayerDistance = 300;
 
+    // Movement properties
+    this.patrolSpeed = 1.5;
+    this.chaseSpeed = 3;
+
+    // Combat properties
+    this.attackCooldown = 0;
+    this.attackCooldownTime = 1500;
+    this.comboAttackCount = 0;
+    this.maxComboAttacks = 2;
+
+    // Patrol behavior
+    this.patrolPoint1 = this.entity.x - 150;
+    this.patrolPoint2 = this.entity.x + 150;
+    this.patrolTarget = this.patrolPoint2;
+
+    // Chase/Search behavior
+    this.lastKnownPlayerX = 0;
+    this.lastKnownPlayerY = 0;
+    this.aggressionLevel = 1;
+    this.maxAggression = 3;
+
+    // Search behavior
+    this.searchTimer = 0;
+    this.searchDuration = 4000;
+    this.searchMoveTimer = 0;
+    this.searchMoveInterval = 1200;
+
+    // Stun behavior
+    this.stunTimer = 0;
+    this.stunDuration = 800;
+
     // Common timers
-    this.reactionTime = 100; // Delay before reacting to player
+    this.reactionTime = 100;
     this.reactionTimer = 0;
 
     // Debug properties
@@ -35,14 +66,260 @@ class BaseAI {
 
   update(deltaTime) {
     this.stateTimer += deltaTime;
-
-    // Override in child classes
     this.updateAI(deltaTime);
   }
 
   updateAI(deltaTime) {
-    // To be implemented by child classes
-    console.warn("BaseAI.updateAI() should be overridden in child class");
+    // Update cooldowns
+    if (this.attackCooldown > 0) {
+      this.attackCooldown -= deltaTime;
+    }
+
+    // Check for player detection
+    const playerInSight = this.detectPlayer();
+
+    // State machine - can be overridden by child classes
+    switch (this.currentState) {
+      case this.AIStates.PATROL:
+        this.handlePatrol(deltaTime, playerInSight);
+        break;
+      case this.AIStates.CHASE:
+        this.handleChase(deltaTime, playerInSight);
+        break;
+      case this.AIStates.ATTACK:
+        this.handleAttack(deltaTime, playerInSight);
+        break;
+      case this.AIStates.SEARCH:
+        this.handleSearch(deltaTime, playerInSight);
+        break;
+      case this.AIStates.STUNNED:
+        this.handleStunned(deltaTime);
+        break;
+      case this.AIStates.FLEE:
+        this.handleFlee(deltaTime, playerInSight);
+        break;
+      default:
+        this.changeState(this.AIStates.PATROL);
+    }
+  }
+
+  // Base patrol behavior
+  handlePatrol(deltaTime, playerInSight) {
+    if (playerInSight) {
+      this.lastKnownPlayerX = this.game.player.x;
+      this.lastKnownPlayerY = this.game.player.y;
+      this.changeState(this.AIStates.CHASE);
+      return;
+    }
+
+    // Simple patrol between two points
+    const distanceToTarget = Math.abs(this.entity.x - this.patrolTarget);
+
+    if (distanceToTarget < 20) {
+      // Reached patrol point, switch to the other one
+      this.patrolTarget =
+        this.patrolTarget === this.patrolPoint1
+          ? this.patrolPoint2
+          : this.patrolPoint1;
+    }
+
+    // Move towards patrol target
+    this.moveTowardsPoint(this.patrolTarget, this.entity.y, this.patrolSpeed);
+  }
+
+  // Base chase behavior
+  handleChase(deltaTime, playerInSight) {
+    const player = this.game.player;
+    const distanceToPlayer = this.getDistanceToPlayer();
+
+    if (playerInSight) {
+      // Update last known position
+      this.lastKnownPlayerX = player.x;
+      this.lastKnownPlayerY = player.y;
+
+      // Check if close enough to attack
+      if (this.isPlayerInAttackRange() && this.attackCooldown <= 0) {
+        this.changeState(this.AIStates.ATTACK);
+        return;
+      }
+
+      // Chase the player
+      this.moveTowardsPlayer(this.chaseSpeed);
+
+      // Increase aggression over time when chasing
+      if (this.stateTimer > 2000) {
+        this.aggressionLevel = Math.min(
+          this.aggressionLevel + 0.1,
+          this.maxAggression
+        );
+      }
+    } else {
+      // Lost sight of player
+      if (this.shouldLosePlayer()) {
+        this.changeState(this.AIStates.SEARCH);
+        this.aggressionLevel = Math.max(this.aggressionLevel - 0.5, 1);
+      } else {
+        // Move towards last known position
+        this.moveTowardsPoint(
+          this.lastKnownPlayerX,
+          this.lastKnownPlayerY,
+          this.chaseSpeed
+        );
+      }
+    }
+  }
+
+  // Base attack behavior
+  handleAttack(deltaTime, playerInSight) {
+    const player = this.game.player;
+    const distanceToPlayer = this.getDistanceToPlayer();
+
+    if (distanceToPlayer <= this.attackRange && this.attackCooldown <= 0) {
+      // Face the player and attack
+      const dx = player.x - this.entity.x;
+      const direction = dx > 0 ? 1 : -1;
+      this.entity.turn(direction);
+      this.entity.attack();
+
+      this.attackCooldown = this.attackCooldownTime;
+      this.comboAttackCount++;
+
+      // Deal damage to player if in range
+      this.attemptDamagePlayer();
+
+      // After a combo of attacks, return to chase
+      if (this.comboAttackCount >= this.maxComboAttacks) {
+        this.comboAttackCount = 0;
+        this.attackCooldown = this.attackCooldownTime * 1.5;
+        this.changeState(this.AIStates.CHASE);
+      }
+    } else {
+      // Player moved away or attack is on cooldown
+      if (distanceToPlayer > this.attackRange * 1.5) {
+        this.changeState(this.AIStates.CHASE);
+      } else if (!playerInSight) {
+        this.changeState(this.AIStates.SEARCH);
+      }
+    }
+  }
+
+  // Base search behavior
+  handleSearch(deltaTime, playerInSight) {
+    if (playerInSight) {
+      // Found player again!
+      this.lastKnownPlayerX = this.game.player.x;
+      this.lastKnownPlayerY = this.game.player.y;
+      this.changeState(this.AIStates.CHASE);
+      return;
+    }
+
+    this.searchTimer += deltaTime;
+    this.searchMoveTimer += deltaTime;
+
+    if (this.searchTimer >= this.searchDuration) {
+      // Give up searching, return to patrol
+      this.aggressionLevel = 1;
+      this.changeState(this.AIStates.PATROL);
+      return;
+    }
+
+    // Search movement
+    if (this.searchMoveTimer >= this.searchMoveInterval) {
+      this.searchMoveTimer = 0;
+
+      // Move towards last known player position with some randomness
+      const randomOffset = (Math.random() - 0.5) * 200;
+      const searchTargetX = this.lastKnownPlayerX + randomOffset;
+
+      this.moveTowardsPoint(
+        searchTargetX,
+        this.entity.y,
+        this.chaseSpeed * 0.7
+      );
+
+      // Sometimes jump while searching
+      if (Math.random() > 0.8 && this.entity.isStanding) {
+        this.entity.jump();
+      }
+    }
+  }
+
+  // Base stunned behavior
+  handleStunned(deltaTime) {
+    this.stunTimer += deltaTime;
+
+    if (this.stunTimer >= this.stunDuration) {
+      this.stunTimer = 0;
+      // Return to appropriate state based on player detection
+      if (this.detectPlayer()) {
+        this.changeState(this.AIStates.CHASE);
+      } else {
+        this.changeState(this.AIStates.PATROL);
+      }
+      return;
+    }
+
+    // Entity is stunned, slow down gradually
+    this.entity.speedX *= 0.85;
+    this.entity.idle();
+  }
+
+  // Base flee behavior
+  handleFlee(deltaTime, playerInSight) {
+    const player = this.game.player;
+    const distanceToPlayer = this.getDistanceToPlayer();
+
+    // Flee until safe distance
+    if (distanceToPlayer < 200) {
+      // Move away from player
+      const dx = this.entity.x - player.x;
+      const direction = dx > 0 ? 1 : -1;
+      this.moveTowardsPoint(
+        this.entity.x + direction * 100,
+        this.entity.y,
+        this.chaseSpeed * 1.2
+      );
+    } else {
+      // Safe distance reached, reassess situation
+      if (this.entity.life > this.entity.damage * 2) {
+        this.changeState(this.AIStates.CHASE); // Re-engage
+      } else {
+        this.changeState(this.AIStates.PATROL); // Retreat
+      }
+    }
+  }
+
+  // Base damage dealing method
+  attemptDamagePlayer() {
+    const player = this.game.player;
+    const dx = player.x - this.entity.x;
+    const distance = Math.abs(dx);
+
+    if (distance < 70) {
+      // Check if player and entity hitboxes overlap
+      const entityHitbox = {
+        x: this.entity.x + this.entity.hitbox.ox,
+        y: this.entity.y + this.entity.hitbox.oy,
+        width: this.entity.hitbox.width,
+        height: this.entity.hitbox.height,
+      };
+
+      const playerHitbox = {
+        x: player.x + player.hitbox.ox,
+        y: player.y + player.hitbox.oy,
+        width: player.hitbox.width,
+        height: player.hitbox.height,
+      };
+
+      if (this.game.checkCollision(entityHitbox, playerHitbox)) {
+        const damage = this.entity.damage + this.aggressionLevel * 2;
+        player.hit(damage);
+
+        // Knockback effect
+        const knockbackDirection = player.x > this.entity.x ? 1 : -1;
+        player.speedX = knockbackDirection * (4 + this.aggressionLevel);
+      }
+    }
   }
 
   // Common detection method
@@ -125,7 +402,26 @@ class BaseAI {
   }
 
   onStateChange(oldState, newState) {
-    // Override in child classes for state-specific logic
+    // Handle state-specific initialization
+    switch (newState) {
+      case this.AIStates.ATTACK:
+        this.comboAttackCount = 0;
+        break;
+      case this.AIStates.SEARCH:
+        this.searchTimer = 0;
+        break;
+      case this.AIStates.STUNNED:
+        this.stunTimer = 0;
+        this.aggressionLevel = Math.max(this.aggressionLevel - 0.3, 1);
+        break;
+      case this.AIStates.PATROL:
+        // Reset patrol target to closest patrol point
+        const dist1 = Math.abs(this.entity.x - this.patrolPoint1);
+        const dist2 = Math.abs(this.entity.x - this.patrolPoint2);
+        this.patrolTarget =
+          dist1 < dist2 ? this.patrolPoint2 : this.patrolPoint1;
+        break;
+    }
   }
 
   // Common movement patterns
@@ -215,6 +511,10 @@ class BaseAI {
   onHit() {
     // Default behavior: become stunned
     this.changeState(this.AIStates.STUNNED);
+    this.aggressionLevel = Math.min(
+      this.aggressionLevel + 0.5,
+      this.maxAggression
+    );
   }
 
   onPlayerDeath() {

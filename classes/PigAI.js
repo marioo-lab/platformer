@@ -3,237 +3,103 @@ class PigAI extends BaseAI {
     super(pig);
     this.pig = pig; // Reference to the pig entity
 
-    // Pig-specific properties
+    // Pig-specific properties (override base values)
     this.visionRange = 300;
     this.visionAngle = 120;
     this.attackRange = 80;
     this.losePlayerDistance = 400;
 
-    // Patrol behavior
-    this.patrolPoint1 = this.pig.x - 150;
-    this.patrolPoint2 = this.pig.x + 150;
-    this.patrolTarget = this.patrolPoint2;
     this.patrolSpeed = 1.5;
-
-    // Chase behavior
     this.chaseSpeed = 3;
-    this.lastKnownPlayerX = 0;
-    this.lastKnownPlayerY = 0;
-    this.aggressionLevel = 1; // How aggressive the pig is (affects behavior)
-
-    // Search behavior
-    this.searchTimer = 0;
-    this.searchDuration = 4000; // 4 seconds of searching
-    this.searchMoveTimer = 0;
-    this.searchMoveInterval = 1200; // Change search direction every 1.2 seconds
-
-    // Attack behavior
-    this.attackCooldown = 0;
-    this.attackCooldownTime = 1500; // 1.5 seconds between attacks
-    this.comboAttackCount = 0;
+    this.attackCooldownTime = 1500;
     this.maxComboAttacks = 2;
 
-    // Stun behavior
-    this.stunTimer = 0;
-    this.stunDuration = 800; // 0.8 seconds of being stunned
+    this.stunDuration = 800;
+    this.searchDuration = 4000;
+
+    // Pig-specific behavior modifiers
+    this.hearingRange = 200; // Pigs can hear player footsteps
+    this.maxAggression = 3;
 
     // Start in patrol mode
     this.changeState(this.AIStates.PATROL);
   }
 
-  updateAI(deltaTime) {
-    // Update cooldowns
-    if (this.attackCooldown > 0) {
-      this.attackCooldown -= deltaTime;
+  // Override detection to add hearing
+  detectPlayer() {
+    // First check vision (from base class)
+    const visualDetection = super.detectPlayer();
+
+    if (visualDetection) {
+      return true;
     }
 
-    // Check for player detection
-    const playerInSight = this.detectPlayer();
-
-    // State machine
-    switch (this.currentState) {
-      case this.AIStates.PATROL:
-        this.handlePatrol(deltaTime, playerInSight);
-        break;
-
-      case this.AIStates.CHASE:
-        this.handleChase(deltaTime, playerInSight);
-        break;
-
-      case this.AIStates.ATTACK:
-        this.handleAttack(deltaTime, playerInSight);
-        break;
-
-      case this.AIStates.SEARCH:
-        this.handleSearch(deltaTime, playerInSight);
-        break;
-
-      case this.AIStates.STUNNED:
-        this.handleStunned(deltaTime);
-        break;
-
-      default:
-        this.changeState(this.AIStates.PATROL);
-    }
+    // If no visual detection, check hearing
+    return this.hearPlayer();
   }
 
-  handlePatrol(deltaTime, playerInSight) {
-    if (playerInSight) {
-      this.lastKnownPlayerX = this.game.player.x;
-      this.lastKnownPlayerY = this.game.player.y;
-      this.changeState(this.AIStates.CHASE);
-      return;
-    }
-
-    // Simple patrol between two points
-    const distanceToTarget = Math.abs(this.pig.x - this.patrolTarget);
-
-    if (distanceToTarget < 20) {
-      // Reached patrol point, switch to the other one
-      this.patrolTarget =
-        this.patrolTarget === this.patrolPoint1
-          ? this.patrolPoint2
-          : this.patrolPoint1;
-    }
-
-    // Move towards patrol target
-    this.moveTowardsPoint(this.patrolTarget, this.pig.y, this.patrolSpeed);
-  }
-
-  handleChase(deltaTime, playerInSight) {
+  // Pig-specific hearing ability
+  hearPlayer() {
     const player = this.game.player;
-    const distanceToPlayer = this.getDistanceToPlayer();
+    const distance = this.getDistanceToPlayer();
 
-    if (playerInSight) {
-      // Update last known position
+    if (distance > this.hearingRange) return false;
+
+    // Player makes noise when running, jumping, or attacking
+    const isNoisy =
+      Math.abs(player.speedX) > 2 ||
+      player.state === player.States.jump ||
+      player.state === player.States.attack ||
+      player.state === player.States.run;
+
+    if (isNoisy) {
       this.lastKnownPlayerX = player.x;
       this.lastKnownPlayerY = player.y;
+      return true;
+    }
 
-      // Check if close enough to attack
-      if (this.isPlayerInAttackRange() && this.attackCooldown <= 0) {
-        this.changeState(this.AIStates.ATTACK);
-        return;
-      }
+    return false;
+  }
 
-      // Chase the player with aggression-based speed
-      const chaseSpeed = this.chaseSpeed + this.aggressionLevel * 0.5;
-      this.moveTowardsPlayer(chaseSpeed);
+  // Override chase behavior for pig-specific tactics
+  handleChase(deltaTime, playerInSight) {
+    // Call base chase behavior first
+    super.handleChase(deltaTime, playerInSight);
 
-      // Increase aggression over time when chasing
-      if (this.stateTimer > 2000) {
-        // After 2 seconds of chasing
-        this.aggressionLevel = Math.min(this.aggressionLevel + 0.1, 3);
-      }
-    } else {
-      // Lost sight of player
-      if (this.shouldLosePlayer()) {
-        this.changeState(this.AIStates.SEARCH);
-        this.aggressionLevel = Math.max(this.aggressionLevel - 0.5, 1);
-      } else {
-        // Move towards last known position
-        this.moveTowardsPoint(
-          this.lastKnownPlayerX,
-          this.lastKnownPlayerY,
-          this.chaseSpeed
+    // Add pig-specific chase enhancements
+    if (playerInSight && this.stateTimer > 3000) {
+      // After 3 seconds of chasing, pigs get more aggressive
+      this.chaseSpeed = Math.min(this.chaseSpeed + 0.1, 4);
+    }
+  }
+
+  // Override attack behavior for pig-specific combat
+  handleAttack(deltaTime, playerInSight) {
+    // Call base attack behavior
+    super.handleAttack(deltaTime, playerInSight);
+
+    // Add pig-specific attack effects
+    if (this.pig.state === this.pig.States.attack) {
+      // Create attack particles for visual feedback
+      if (this.game.particleSystem && Math.random() > 0.7) {
+        this.game.particleSystem.createAttackParticles(
+          this.pig.x + this.pig.width / 2,
+          this.pig.y + this.pig.height / 2,
+          this.pig.direction,
+          "red",
+          3
         );
       }
     }
   }
 
-  handleAttack(deltaTime, playerInSight) {
-    const player = this.game.player;
-    const distanceToPlayer = this.getDistanceToPlayer();
-
-    if (distanceToPlayer <= this.attackRange && this.attackCooldown <= 0) {
-      // Face the player and attack
-      const dx = player.x - this.pig.x;
-      const direction = dx > 0 ? 1 : -1;
-      this.pig.turn(direction);
-      this.pig.attack();
-
-      this.attackCooldown = this.attackCooldownTime;
-      this.comboAttackCount++;
-
-      // Deal damage to player if in range
-      this.attemptDamagePlayer();
-
-      // After a combo of attacks, briefly stun or retreat
-      if (this.comboAttackCount >= this.maxComboAttacks) {
-        this.comboAttackCount = 0;
-        this.attackCooldown = this.attackCooldownTime * 1.5; // Longer cooldown
-        this.changeState(this.AIStates.CHASE);
-      }
-    } else {
-      // Player moved away or attack is on cooldown
-      if (distanceToPlayer > this.attackRange * 1.5) {
-        this.changeState(this.AIStates.CHASE);
-      } else if (!playerInSight) {
-        this.changeState(this.AIStates.SEARCH);
-      }
-    }
-  }
-
-  handleSearch(deltaTime, playerInSight) {
-    if (playerInSight) {
-      // Found player again!
-      this.lastKnownPlayerX = this.game.player.x;
-      this.lastKnownPlayerY = this.game.player.y;
-      this.changeState(this.AIStates.CHASE);
-      return;
-    }
-
-    this.searchTimer += deltaTime;
-    this.searchMoveTimer += deltaTime;
-
-    if (this.searchTimer >= this.searchDuration) {
-      // Give up searching, return to patrol
-      this.aggressionLevel = 1; // Reset aggression
-      this.changeState(this.AIStates.PATROL);
-      return;
-    }
-
-    // Intelligent search movement
-    if (this.searchMoveTimer >= this.searchMoveInterval) {
-      this.searchMoveTimer = 0;
-
-      // Move towards last known player position with some randomness
-      const randomOffset = (Math.random() - 0.5) * 200;
-      const searchTargetX = this.lastKnownPlayerX + randomOffset;
-
-      this.moveTowardsPoint(searchTargetX, this.pig.y, this.chaseSpeed * 0.7);
-
-      // Sometimes jump while searching to look around
-      if (Math.random() > 0.8 && this.pig.isStanding) {
-        this.pig.jump();
-      }
-    }
-  }
-
-  handleStunned(deltaTime) {
-    this.stunTimer += deltaTime;
-
-    if (this.stunTimer >= this.stunDuration) {
-      this.stunTimer = 0;
-      // Return to appropriate state based on player detection
-      if (this.detectPlayer()) {
-        this.changeState(this.AIStates.CHASE);
-      } else {
-        this.changeState(this.AIStates.PATROL);
-      }
-    }
-
-    // Pig is stunned, slow down gradually
-    this.pig.speedX *= 0.85;
-    this.pig.idle();
-  }
-
+  // Override damage dealing for pig-specific damage calculation
   attemptDamagePlayer() {
     const player = this.game.player;
     const dx = player.x - this.pig.x;
     const distance = Math.abs(dx);
 
     if (distance < 70) {
-      // Check if player and pig hitboxes overlap
       const pigHitbox = {
         x: this.pig.x + this.pig.hitbox.ox,
         y: this.pig.y + this.pig.hitbox.oy,
@@ -249,50 +115,74 @@ class PigAI extends BaseAI {
       };
 
       if (this.game.checkCollision(pigHitbox, playerHitbox)) {
-        const damage = this.pig.damage + this.aggressionLevel * 2;
+        // Pig-specific damage calculation
+        const baseDamage = this.pig.damage;
+        const aggressionBonus = this.aggressionLevel * 2;
+        const damage = baseDamage + aggressionBonus;
+
         player.hit(damage);
 
-        // Knockback effect
+        // Pig-specific knockback
         const knockbackDirection = player.x > this.pig.x ? 1 : -1;
-        player.speedX = knockbackDirection * (4 + this.aggressionLevel);
+        const knockbackForce = 4 + this.aggressionLevel;
+        player.speedX = knockbackDirection * knockbackForce;
+
+        // Pig attack sound
+        if (this.game.audioManager) {
+          this.game.audioManager.playSound("enemyAttack", 0.8);
+        }
       }
     }
   }
 
+  // Override state change for pig-specific state handling
   onStateChange(oldState, newState) {
-    // Handle state-specific initialization
+    // Call base state change
+    super.onStateChange(oldState, newState);
+
+    // Pig-specific state change behaviors
     switch (newState) {
       case this.AIStates.ATTACK:
-        this.comboAttackCount = 0;
+        // Pigs snort when attacking (could add sound here)
         break;
 
-      case this.AIStates.SEARCH:
-        this.searchTimer = 0;
+      case this.AIStates.CHASE:
+        // Reset chase speed when starting new chase
+        this.chaseSpeed = 3;
         break;
 
       case this.AIStates.STUNNED:
-        this.stunTimer = 0;
-        // Reduce aggression when stunned
-        this.aggressionLevel = Math.max(this.aggressionLevel - 0.3, 1);
-        break;
-
-      case this.AIStates.PATROL:
-        // Reset patrol target to closest patrol point
-        const dist1 = Math.abs(this.pig.x - this.patrolPoint1);
-        const dist2 = Math.abs(this.pig.x - this.patrolPoint2);
-        this.patrolTarget =
-          dist1 < dist2 ? this.patrolPoint2 : this.patrolPoint1;
+        // Pigs make pain sound when stunned
+        if (this.game.audioManager) {
+          this.game.audioManager.playSound("enemyHit", 0.6);
+        }
         break;
     }
   }
 
+  // Override hit response for pig-specific reaction
   onHit() {
-    this.changeState(this.AIStates.STUNNED);
+    // Call base hit response
+    super.onHit();
 
-    // Increase aggression when hit
-    this.aggressionLevel = Math.min(this.aggressionLevel + 0.5, 3);
+    // Pig-specific hit effects
+    if (this.game.particleSystem) {
+      this.game.particleSystem.createBloodParticles(
+        this.pig.x + this.pig.width / 2,
+        this.pig.y + this.pig.height / 2,
+        -this.pig.direction,
+        5
+      );
+    }
+
+    // Increase pig aggression more than base amount
+    this.aggressionLevel = Math.min(
+      this.aggressionLevel + 0.7,
+      this.maxAggression
+    );
   }
 
+  // Pig-specific debug visualization
   drawDebug(context) {
     // Call base debug drawing
     this.drawDebugBase(context);
@@ -302,7 +192,7 @@ class PigAI extends BaseAI {
     const centerX = this.pig.x + this.pig.width / 2;
     const centerY = this.pig.y + this.pig.height / 2;
 
-    // Draw vision cone
+    // Draw pig-specific vision cone
     const visionAngleRad = ((this.visionAngle / 2) * Math.PI) / 180;
     const pigFacingAngle = this.pig.direction > 0 ? 0 : Math.PI;
 
@@ -323,6 +213,14 @@ class PigAI extends BaseAI {
       centerY + Math.sin(angle2) * this.visionRange
     );
     context.stroke();
+
+    // Draw hearing range (pig-specific)
+    context.strokeStyle = "purple";
+    context.setLineDash([5, 5]);
+    context.beginPath();
+    context.arc(centerX, centerY, this.hearingRange, 0, 2 * Math.PI);
+    context.stroke();
+    context.setLineDash([]);
 
     // Draw raycast to player if detected
     if (this.playerDetected && this.game.player) {
@@ -374,13 +272,18 @@ class PigAI extends BaseAI {
       6
     );
 
-    // Draw aggression level
-    context.fillStyle = "red";
+    // Draw pig-specific info
+    context.fillStyle = "white";
     context.font = "10px Arial";
     context.fillText(
       `Aggression: ${this.aggressionLevel.toFixed(1)}`,
       this.pig.x,
       this.pig.y - 25
+    );
+    context.fillText(
+      `Chase Speed: ${this.chaseSpeed.toFixed(1)}`,
+      this.pig.x,
+      this.pig.y - 40
     );
 
     // Draw last known player position when searching
@@ -393,5 +296,36 @@ class PigAI extends BaseAI {
         20
       );
     }
+  }
+
+  // Pig-specific utility methods
+  makeNoise() {
+    // Could be used for pig sounds/grunts
+    if (this.game.audioManager && Math.random() > 0.95) {
+      // Occasional pig grunt sounds (very rare)
+      this.game.audioManager.playSound("pickup", 0.3);
+    }
+  }
+
+  // Get pig-specific status
+  getPigStatus() {
+    return {
+      ...this.getBaseStatus(),
+      hearingRange: this.hearingRange,
+      chaseSpeed: this.chaseSpeed,
+      maxAggression: this.maxAggression,
+      canHearPlayer: this.hearPlayer(),
+    };
+  }
+
+  getBaseStatus() {
+    return {
+      state: this.currentState,
+      aggressionLevel: this.aggressionLevel,
+      playerDetected: this.playerDetected,
+      distanceToPlayer: this.getDistanceToPlayer(),
+      health: this.pig.life,
+      position: { x: this.pig.x, y: this.pig.y },
+    };
   }
 }
